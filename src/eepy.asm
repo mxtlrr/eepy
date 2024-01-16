@@ -1,50 +1,99 @@
-
-
 section .data
 buf times 4096 db 0 ;; 4 mb of data space
-_RMODE equ 0
+_RMODE        equ 0
 
-dataptr db 0
+LOOP_STARTED equ 1
+__loop__     db  0
+dataptr      db  0
 
 section .text
 global _start
 
+%macro goback 0
+  inc ecx
+  jmp .Loop
+%endmacro
+
 ;; We know that ECX is the buffer containing the program
 ;; So we can just loop until buffer is equal to 0, then return.
 EepyHandle:
-  ;; make a back up <333
-  mov esi, ecx
+  
+  xor esi, esi    ;; counter for loops
   .Loop:
     cmp [ecx], byte 0   ;; No more to read!
     je .Exit
 
-    cmp [ecx], byte 'ż'
+    cmp [ecx], byte 'ż'   ;;; increases data pointer
     je .IncreaseDataPTR
 
-    cmp [ecx], byte 'Ž'
+    cmp [ecx], byte 'Ž'   ;;; decreases data pointer
     je .DecreaseDataPTR
 
-    cmp [ecx], byte 'ℤ'
+    cmp [ecx], byte 'ℤ'   ;;; outputs ascii of data pointer
     je .OutputDataPTR
 
+    cmp [ecx], byte 'O'
+    je .StartLoop
+
+
+    cmp [ecx], byte 'o'   ;;; starts loop
+    je .EndLoop
+
+    cmp edi, 1    ;; loop started
+    je  ._Loop
+    jne .Normal
+  .Exit: ret
+
+  ._Loop:
+    inc esi
     inc ecx
     jmp .Loop
-  .Exit:
-    ret
+  
+  .Normal:
+    inc ecx
+    jmp .Loop
+
+  .StartLoop:
+    mov edi, LOOP_STARTED
+    goback
+
+  .EndLoop:
+    push ebx
+    mov ebx, [__loop__]
+    cmp ebx, 1
+    je ._goback
+
+    ;; Maybe fix?
+    ; inc esi
+    ;; ECX-ESI
+    sub ecx, esi
+    xor esi, esi  ;; reset counter
+
+    ;; set loop to one
+    mov ebx, 1
+    mov [__loop__], ebx
+    pop ebx
+   
+    inc ecx
+    jmp .Loop
+      ._goback:
+        inc ecx
+        jmp .Loop
 
   .IncreaseDataPTR:
     mov edi, [dataptr]
     inc edi
     mov [dataptr], edi
-    inc ecx
-    jmp .Loop
+    goback
 
   .DecreaseDataPTR:
     mov edi, [dataptr]
     dec edi
     mov [dataptr], edi
+    
     inc ecx
     jmp .Loop
+
 
   .OutputDataPTR:
     push ecx
@@ -54,9 +103,7 @@ EepyHandle:
     mov edx, 1      ;; self explanatory
     int 0x80
 
-    pop ecx   ;; restore current value
-              ;; here we could also do
-              ;; mov ecx, esi, but eh
+    pop ecx    
     inc ecx
     jmp .Loop
 
@@ -80,11 +127,6 @@ _start:
 
   ;; buf is already in ecx.
   call EepyHandle
-
-  jmp _exit
-  ret
-
-_exit:
   mov eax, 0x01
   xor ebx, ebx
   int 0x80
