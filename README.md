@@ -1,3 +1,5 @@
+<img src="./img/4fa.png" width=45% align="right">
+
 # eepy
 Eepy is an esoteric programming language written in 100%
 i386 assembly. It has three opcodes:
@@ -9,10 +11,7 @@ i386 assembly. It has three opcodes:
 | Ž (U+017D) | Decreases  data pointer        |
 | ℤ (U+2124) | Output ASCII of data pointer   |
 
-The instruction pointer, and the data pointer is a unsigned 8-bit
-integer. Thus making `IP=256` would cause an infinite loop due
-to `IP` looping back to 0.
-
+***More soon in later versions...***
 
 # Programs
 
