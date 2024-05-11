@@ -13,3 +13,4 @@ i386 assembly. It has three opcodes:
 | e (U+0065) | Increments data pointer        |
 | p (U+0070) | Decreases  data pointer        |
 | y (U+0059) | Output ASCII of data pointer   |
+| . (U+002E) | Set data pointer to zero       |
