@@ -1,5 +1,8 @@
 <img src="./img/4fa.png" width=45% align="right">
 
+# WARNING
+**THIS PROJECT WAS WRITTEN FOR LINUX! IT WILL NOT WORK ON ANY OTHER PLATFORM/OS**
+
 # eepy
 Eepy is an esoteric programming language written in 100%
 i386 assembly. It has three opcodes:
