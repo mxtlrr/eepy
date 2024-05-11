@@ -7,17 +7,6 @@ i386 assembly. It has three opcodes:
 
 |  Character | Action                         |
 | ---------- | ------------------------------ |
-| ż (U+017C) | Increments data pointer        |
-| Ž (U+017D) | Decreases  data pointer        |
-| ℤ (U+2124) | Output ASCII of data pointer   |
-
-***More soon in later versions...***
-
-# Programs
-
-## `eepy` in Eepy
-```
-żżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżżℤℤ
-żżżżżżżżżżżℤ
-żżżżżżżżżℤ
-```
+| e (U+0065) | Increments data pointer        |
+| p (U+0070) | Decreases  data pointer        |
+| y (U+0059) | Output ASCII of data pointer   |
