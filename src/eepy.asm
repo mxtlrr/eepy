@@ -2,12 +2,12 @@
 
 section .data
 buf times 4096 db 0 ;; 4 mb of data space
-_RMODE equ 0
 
 dataptr    db 0
-inst_ptr   db 0  ;; copy of ecx.
+inst_ptr   db 0 ;; copy of ecx.
 is_looping db 0  ;; 0 -- No (Z not found yet!) 1 -- Yes!
 loop_ct    db 0
+
 ;; >>
 ;; 1 - 1
 ;; 2 - 2
@@ -16,6 +16,11 @@ loop_ct    db 0
 
 section .text
 global _start
+
+;; breakpoint
+n22test:
+  int 0x3
+  ret
 
 ;; Handle everything.
 EepyHandle:
@@ -47,7 +52,6 @@ EepyHandle:
     ;; Not equal, check for others, and if still
     ;; not equal increment and loop
     jne .i2nc
-    jmp .Loop
 
   .SetDPZero:
     mov ebx, [dataptr]
@@ -72,12 +76,11 @@ EepyHandle:
 
   .PrintDP:
     push ecx
-    mov eax, 0x04
-    mov ebx, 0x01   ;; stdout
-    mov ecx, dataptr
-    mov edx, 1      ;; self explanatory
-    int 0x80
-
+      mov eax, 0x04
+      mov ebx, 0x01   ;; stdout
+      mov ecx, dataptr
+      mov edx, 1      ;; self explanatory
+      int 0x80
     pop ecx    
     inc ecx
     jmp .Loop
@@ -86,50 +89,58 @@ EepyHandle:
     inc ecx
     ;; Increase instruction pointer. This is only really used
     ;; for loops
+
     push ebx
-      mov ebx, [is_looping]      
-      cmp ebx, 1 ;; Looping... update
+      cmp esi, 1 ;; Looping... update
         je .Yess
         jne .Loop
+    pop ebx
 
-    .Yess:    ;; Increaseinstruction pointer
-      mov ebx, [is_looping]
-      inc ebx
-      mov [inst_ptr], ebx
+    .Yess:    ;; Increase instruction pointer
+      inc esi
+      ;; EBX - inst_ptr
+      push eax  ;; subt 48
+      push ebx
+      push ecx
+        xor ecx, ecx  ;; reset
+        mov ecx, esi
+        int 0x3
+        add ecx, 48     ;; turn to ascii possible
+        mov eax, 0x04
+        mov ebx, 0x01
+        ;; ecx already set
+        mov edx, 1
+        int 0x80
+
+      pop ecx
       pop ebx
+      pop eax
+
       jmp .Loop ;; Go back
   
 
   .EnableLooping:
-    ;; Is it already enabled?
-    mov edx, [is_looping]
-
-    ;; edx != 0 => ???
-    cmp edx, 0
+    cmp esi, 0
     jne $     ;; Just hang. WTF are you doing?
     je  .SetAndRt
 
     .SetAndRt:
       push edx
-        mov edx, [is_looping]
-        inc edx   ;; edx here should be one
-        mov [is_looping], edx
+        mov edi, 1
       pop edx
       jmp .i2nc
 
     .DisableLooping:    ;; after we finish looping
       push edx
-      mov edx, [is_looping]
-      xor edx, edx
-      mov [is_looping], edx
-      jmp .i2nc
+        xor edi, edi
+        jmp .i2nc
+      pop edx
 
     
     .HandleLooping:
       push edx
-        mov edx, [is_looping]
-        cmp edx, 1
-        jne .DisableLooping ;; Stop looping, don't do anything. 
+        cmp edi, 0            ;; Looping?
+        jne .DisableLooping ;; Yes, disable. 
       pop edx
       ;; How many times do we need to loop?
       ;; Next char is amount
@@ -143,7 +154,7 @@ EepyHandle:
 
       ;; Delete everything that we did from ecx
       push edx
-        mov edx, [inst_ptr]
+        mov edx, esi
         sub ecx, edx    ;; ecx - inst_ptr. This will not increase on
                         ;; the 'z'.
       pop edx
@@ -152,16 +163,15 @@ EepyHandle:
       jmp .Loop
 
 _start:
-  mov edx, [is_looping]
-  xor edx, edx
-  mov [is_looping], edx
-  
+  xor edi, edi    ;; are we looping?
+  xor esi, esi    ;; instruction pointer
+
   ;; Get first argument
   lea ecx, [esp+8]
   mov ebx, [ecx]
 
   mov eax, 5        ;; sys_open     
-  mov ecx, _RMODE
+  mov ecx, 0
   int 0x80
 
   ;; time for reading
@@ -172,6 +182,7 @@ _start:
   int 0x80
 
   ;; handle all code and things
+  xor edx, edx
   call EepyHandle
 
   jmp _exit
