@@ -5,7 +5,7 @@ buf times 4096 db 0 ;; 4 mb of data space
 
 dataptr    db 0
 inst_ptr   db 0 ;; copy of ecx.
-is_looping db 0  ;; 0 -- No (Z not found yet!) 1 -- Yes!
+plchldr    db 0
 loop_ct    db 0
 
 ;; >>
@@ -77,9 +77,9 @@ EepyHandle:
   .PrintDP:
     push ecx
       mov eax, 0x04
-      mov ebx, 0x01   ;; stdout
-      mov ecx, dataptr
-      mov edx, 1      ;; self explanatory
+      mov ebx, 0x01    ;; stdout
+      mov ecx, dataptr ;; data to print out
+      mov edx, 1       ;; self explanatory
       int 0x80
     pop ecx    
     inc ecx
@@ -89,78 +89,64 @@ EepyHandle:
     inc ecx
     ;; Increase instruction pointer. This is only really used
     ;; for loops
-
     push ebx
-      cmp esi, 1 ;; Looping... update
+      cmp edi, 1 ;; Looping... update
         je .Yess
         jne .Loop
     pop ebx
 
     .Yess:    ;; Increase instruction pointer
       inc esi
-      ;; EBX - inst_ptr
-      push eax  ;; subt 48
-      push ebx
-      push ecx
-        xor ecx, ecx  ;; reset
-        mov ecx, esi
-        int 0x3
-        add ecx, 48     ;; turn to ascii possible
-        mov eax, 0x04
-        mov ebx, 0x01
-        ;; ecx already set
-        mov edx, 1
-        int 0x80
-
-      pop ecx
-      pop ebx
-      pop eax
-
       jmp .Loop ;; Go back
   
 
   .EnableLooping:
-    cmp esi, 0
+    cmp edi, 0
     jne $     ;; Just hang. WTF are you doing?
     je  .SetAndRt
 
     .SetAndRt:
-      push edx
-        mov edi, 1
-      pop edx
+      mov edi, 1
       jmp .i2nc
 
     .DisableLooping:    ;; after we finish looping
-      push edx
-        xor edi, edi
-        jmp .i2nc
-      pop edx
-
+      ;; TODO: move this to handle looping      
+      
+      xor edi, edi
+      xor esi, esi
+      jmp .i2nc
     
     .HandleLooping:
+    ;; TODO: fix this, shouldn't stop if we are looping.
       push edx
         cmp edi, 0            ;; Looping?
-        jne .DisableLooping ;; Yes, disable. 
+        je .GetStuff
+        jne .GoBack ;; Yes, continue
       pop edx
-      ;; How many times do we need to loop?
-      ;; Next char is amount
-      push eax  ;; Store so we don't end up fucking something up
-      push ebx
-        mov eax, [ecx+1]
-        mov [loop_ct], eax
-      pop ebx
-      pop eax
+      
+      cmp esi, [loop_ct]
+      je .DisableLooping
+      
       ;; loop_ct has amount of times we need to loop
 
       ;; Delete everything that we did from ecx
-      push edx
-        mov edx, esi
-        sub ecx, edx    ;; ecx - inst_ptr. This will not increase on
-                        ;; the 'z'.
-      pop edx
+      .GoBack:
+        push edx
+          mov edx, esi
+          sub ecx, edx    ;; ecx - inst_ptr. This will not increase on
+                          ;; the 'z'.
+        pop edx
+        jmp .Loop
 
-      ;; Now we can go back to .Loop, and see if it works.
-      jmp .Loop
+      .GetStuff:
+        ;; How many times do we need to loop?
+        ;; Next char is amount
+        push eax  ;; Store so we don't end up fucking something up
+        push ebx
+          mov eax, [ecx+1]
+          mov [loop_ct], eax
+        pop ebx
+        pop eax
 
 _start:
   xor edi, edi    ;; are we looping?
