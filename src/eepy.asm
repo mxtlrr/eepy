@@ -102,7 +102,7 @@ EepyHandle:
 
   .EnableLooping:
     cmp edi, 0
-    jne $     ;; Just hang. WTF are you doing?
+    jne n22test    ;; Just hang. WTF are you doing?
     je  .SetAndRt
 
     .SetAndRt:
@@ -136,7 +136,7 @@ EepyHandle:
           sub ecx, edx    ;; ecx - inst_ptr. This will not increase on
                           ;; the 'z'.
         pop edx
-        jmp .Loop
+        jmp .Yess
 
       .GetStuff:
         ;; How many times do we need to loop?
